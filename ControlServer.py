@@ -6,6 +6,7 @@ import pigpio
 pi=pigpio.pi()
 pi.set_mode(23,pigpio.OUTPUT)
 pi.set_servo_pulsewidth(23,1500)
+print("servo setup")
 
 HOST=''
 PORT=21567
@@ -17,8 +18,9 @@ tcpSerSock.listen(5)
 print('Waiting for connection')
 tcpCliSock,addr=tcpSerSock.accept()
 print('...connected from:',ADDR)
+
 while True:
-    
+    print("while true")
     try:
         tcpCliSock,addr=tcpSerSock.accept()
         Dat=tcpCliSock.recv(BUFSIZE).decode("utf-8")
@@ -37,6 +39,7 @@ while True:
             L=i
             R=j
             V=k
+            print(i,j,k,float(data[3]))
 
             c.L(L)
             c.R(R)

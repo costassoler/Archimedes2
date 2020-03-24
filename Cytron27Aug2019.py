@@ -2,20 +2,20 @@ import RPi.GPIO as GPIO
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-DirRV=4
-PwmRV=17
+DirRV=17
+PwmRV=27
 GPIO.setup(PwmRV,GPIO.OUT)
 GPIO.setup(DirRV,GPIO.OUT)
 rv=GPIO.PWM(PwmRV,100)
 
-DirR=27
-PwmR=22
+DirR=22
+PwmR=10
 GPIO.setup(DirR,GPIO.OUT)
 GPIO.setup(PwmR,GPIO.OUT)
 r=GPIO.PWM(PwmR,100)
 
-DirL=10
-PwmL=9
+DirL=9
+PwmL=11
 GPIO.setup(DirL,GPIO.OUT)
 GPIO.setup(PwmL,GPIO.OUT)
 l=GPIO.PWM(PwmL,100)
@@ -50,10 +50,10 @@ def LV(y):
         GPIO.output(DirL,GPIO.LOW)
         l.start(abs(y))
 def L(z):
-    if(z>=0):
+    if(z<=0):
         GPIO.output(DirLV,GPIO.HIGH)
         lv.start(abs(z))
-    if(z<0):
+    if(z>0):
         GPIO.output(DirLV,GPIO.LOW)
         lv.start(abs(z))
         
