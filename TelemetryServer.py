@@ -19,20 +19,20 @@ tcpSerSock.bind(ADDR)
 tcpSerSock.listen(5)
 print('Waiting for connection')
 print('...connected from:',ADDR)
-sensor = qmc.QMC5883L()
-sensor.calibration = [[  1.03194204e+00,  -5.83440263e-02,  -6.59472052e+03],
-                      [ -5.83440263e-02,   1.10656882e+00,   4.03742821e+02],
-                      [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00]]
 
 while True:
 
     tcpDataSock,addr=tcpSerSock.accept()
     #print("accepted")
     try:
+        sensor = qmc.QMC5883L()
+        sensor.calibration = [[  1.03194204e+00,  -5.83440263e-02,  -6.59472052e+03],
+                              [ -5.83440263e-02,   1.10656882e+00,   4.03742821e+02],
+                              [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00]]
         m=sensor.get_bearing()
         
     except:
-        m="none"
+        m='none'
     try:
     #print(m)
         RawVoltage = adc.read_adc(0,gain = GAIN)

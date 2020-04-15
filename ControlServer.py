@@ -18,7 +18,7 @@ tcpSerSock.listen(5)
 print('Waiting for connection')
 tcpCliSock,addr=tcpSerSock.accept()
 print('...connected from:',ADDR)
-
+scale = .7
 while True:
     print("while true")
     try:
@@ -30,21 +30,21 @@ while True:
             j=float(data[1])
             k=float(data[2])
 
-            if(i<20) and (i>-20):
+            if(abs(i)<5):
                 i=0
-            if(j<20) and (j>-20):
+            if(abs(j)<5):
                 j=0
-            if(k<20) and (k>-20):
+            if(abs(k)<5):
                 k=0
             L=i
             R=j
             V=k
             print(i,j,k,float(data[3]))
 
-            c.L(L)
-            c.R(R)
-            c.LV(V)
-            c.RV(V)
+            c.L(L*scale)
+            c.R(R*scale)
+            c.LV(V*scale)
+            c.RV(V*scale)
             cam=float(data[3])
             angle=1000+cam*1000/180
             if(angle<1200):
