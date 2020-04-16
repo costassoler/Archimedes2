@@ -1,12 +1,18 @@
 from socket import *
 from time import ctime
+import os
 import Cytron27Aug2019 as c
 import pigpio
+
 #servo setup:
 pi=pigpio.pi()
 pi.set_mode(23,pigpio.OUTPUT)
 pi.set_servo_pulsewidth(23,1500)
 print("servo setup")
+
+#Eth0Status = os.popen("sudo ifconfig eth0").read()
+
+#print(Eth0Status)
 
 HOST=''
 PORT=21567
@@ -18,12 +24,30 @@ tcpSerSock.listen(5)
 print('Waiting for connection')
 tcpCliSock,addr=tcpSerSock.accept()
 print('...connected from:',ADDR)
+tcpSerSock.settimeout(0.5) #Socket reader moves on after waiting for a new message for 1 second
 scale = .7
+
+L=0
+R=0
+V=0
+n=0
 while True:
     print("while true")
     try:
-        tcpCliSock,addr=tcpSerSock.accept()
-        Dat=tcpCliSock.recv(BUFSIZE).decode("utf-8")
+        
+        '''START Disconnect Safety Override'''      
+        try:
+            #reads new commands from socket
+            tcpCliSock,addr=tcpSerSock.accept()
+            Dat=tcpCliSock.recv(BUFSIZE).decode("utf-8")
+            n=0
+        
+        except:
+            #catches any exception (most likely timeout after 0.5 second) that prevents successful command read.'''
+            Dat="0,0,0,125"
+            
+        '''END Disconnect Safety Override'''
+        
         try:
             data=Dat.split(",")
             i=float(data[0])
@@ -40,11 +64,6 @@ while True:
             R=j
             V=k
             print(i,j,k,float(data[3]))
-
-            c.L(L*scale)
-            c.R(R*scale)
-            c.LV(V*scale)
-            c.RV(V*scale)
             cam=float(data[3])
             angle=1000+cam*1000/180
             if(angle<1200):
@@ -52,7 +71,12 @@ while True:
             if(angle>2000):
                 angle=2000
             pi.set_servo_pulsewidth(23,angle)
+            
 
+            c.L(L*scale)
+            c.R(R*scale)
+            c.LV(V*scale)
+            c.RV(V*scale)
                 
         except:
             continue
