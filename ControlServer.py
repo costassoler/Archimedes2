@@ -30,6 +30,7 @@ scale = .7
 L=0
 R=0
 V=0
+cam=100
 n=0
 while True:
     print("while true")
@@ -44,7 +45,7 @@ while True:
         
         except:
             #catches any exception (most likely timeout after 0.5 second) that prevents successful command read.'''
-            Dat="0,0,0,125"
+            Dat="0,0,0,"+str(cam)+",AutoOff"
             
         '''END Disconnect Safety Override'''
         

@@ -17,13 +17,20 @@ ADDR=(HOST,PORT)
 tcpSerSock=socket(AF_INET,SOCK_STREAM)
 tcpSerSock.bind(ADDR)
 tcpSerSock.listen(5)
+#tcpSerSock.settimeout(0.5)
+
+RawVoltage = adc.read_adc(0,gain = GAIN)
+Voltage = round(100*RawVoltage*4.096/(2**15))/100
+Volts=str(Voltage)+'V'
+print(Volts)
+
 print('Waiting for connection')
 print('...connected from:',ADDR)
 
 while True:
 
     tcpDataSock,addr=tcpSerSock.accept()
-    #print("accepted")
+    print("accepted")
     try:
         sensor = qmc.QMC5883L()
         sensor.calibration = [[  1.03194204e+00,  -5.83440263e-02,  -6.59472052e+03],
