@@ -7,16 +7,25 @@ import numpy as np
 
 #IMU Setup:
 from mpu6050 import mpu6050
+IMU   = mpu6050(0x68)
+
+print(IMU.get_gyro_data()['z'])
 calN = 20
 N=0
 P = 40
+bearingC=0
 
+'''
 accelAvg = 12
-gyroz = 0
+cInt=0
+cInt=0.05
+gyro=0
+cDer = 1
+
 accelT = 0
 accZ = 0
 
-'''
+
 for i in range (0,calN):
     try:
         
@@ -55,13 +64,14 @@ print('...connected from:',ADDR)
 tcpSerSock.settimeout(0.5) #Socket reader moves on after waiting for a new message for 1 second
 scale = .7
 
+
+
 L=0
 R=0
 V        = 0
 cam      = 100
 N        = 0
 bearingC = 0
-bearingNet=0
 udC      = 0
 MotorArm="AutoOff"
 while True:
@@ -83,38 +93,23 @@ while True:
 
         '''START IMU Readout'''
         try:
-            data=Dat.split(",")
-            MotorArm==data[4]
-            if (MotorArm=="AutoOn"):
+            if(MotorArm=="AutoOn"):
                 N+=1
-                IMU   = mpu6050(0x68)
-                #accel = IMU.get_accel_data()
-                #accelT=(accel['x']**2+accel['y']**2+accel['z']**2)**.5
-                #measurement = accel['z']
-                gyro  = IMU.get_gyro_data()['z']*np.cos(np.pi/4)+IMU.get_gyro_data()['y']*np.cos(np.pi/4)
+                gyro  = (IMU.get_gyro_data()['z']+IMU.get_gyro_data()['y'])*0.707
+                bearingC+=gyro
                 
-        
-                if (abs(gyro)<1):
-                    gyro=0
-                if(gyro>20):
-                    gyro = 20
-                if(gyro<-20):
-                    gyro=-20
-                bearingC = gyro
-
-                bearingNet += bearingC
-
-                if(N%5==0):
-                    bearingAvg=bearingNet/5
-                    bearingNet=0
+                     
+                if(N==5):
+                    bearingAvg=bearingC//5
                     print(bearingAvg)
-                    
-            if(MotorArm!="AutoOn"):
-                bearingAvg=0
+                    bearingC=0
+                    N=0
+                                  
+        except Exception as inst:
+            #print(type(inst))
+            #print(inst.args)
             
-        except:
             bearingAvg=0
-            pass
             
         '''END IMU Readout'''
 
@@ -135,12 +130,14 @@ while True:
                 j=0
             if(abs(k)<5):
                 k=0
-            if (MotorArm!="AutoOn")or(abs(i-j)>10):
+        
+            if(abs(i-j)>10) or (MotorArm != "AutoOn"):
                 bearingAvg=0
-                udC = 0
-            
-            L=i+bearingAvg
-            R=j-bearingAvg
+                bearingC=0
+                N=0
+                
+            L=i#+bearingAvg
+            R=j#-bearingAvg
             V=k
             #print(bearingC)
             #print(i,j,k,float(data[3]))
@@ -151,14 +148,16 @@ while True:
             if(angle>2000):
                 angle=2000
             pi.set_servo_pulsewidth(23,angle)
-            print(L,R,V,cam)
+            
 
             c.L(L*scale)
             c.R(R*scale)
             c.LV(V*scale)
             c.RV(V*scale)
                 
-        except:
+        except Exception as inst:
+            print(type(inst))
+            print(inst.args)
             continue
         '''END Data Processing'''
         
