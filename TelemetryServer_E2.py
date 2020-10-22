@@ -25,7 +25,7 @@ s.listen(5)
 
 print('Waiting for connection')
 print('...connected from:',ADDR)
-
+content="NA,NA"
 while True:
 
     tcpDataSock,addr=tcpSerSock.accept()
@@ -35,7 +35,7 @@ while True:
         sensor.calibration = [[  1.03194204e+00,  -5.83440263e-02,  -6.59472052e+03],
                               [ -5.83440263e-02,   1.10656882e+00,   4.03742821e+02],
                               [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00]]
-        m=sensor.get_bearing()
+        m=str(sensor.get_bearing())
         
     except:
         m='none'
@@ -51,21 +51,23 @@ while True:
     try:
         client,addr = s.accept()
         while True:
-            content = client.recv(32).decode('UTF-8')
+            content = str(client.recv(32).decode('UTF-8'))
             #content = client.read_until(b'*')
             if len(content)==0:
-               pass
+                pass
             else:
-               print(content)
+                print(content)
             client.close()
             #print("Connection closed")
-    except:
+    except Exception as e:
+        print(e)
         pass  
     try:
-        Message = str(m)+','+Volts+','+str(content)+'\r\n'
+        Message = m+','+Volts+','+content+'\r\n'
         tcpDataSock.send(Message.encode('UTF-8'))
     
-    except:
+    except Exception as e:
+        print(e)
         pass
     
 
