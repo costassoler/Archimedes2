@@ -22,6 +22,7 @@ tcpSerSock.listen(5)
 s = socket(AF_INET,SOCK_STREAM)
 s.bind(('',8095))
 s.listen(5)
+s.settimeout(0.5)
 
 print('Waiting for connection')
 print('...connected from:',ADDR)
@@ -54,7 +55,7 @@ while True:
             content = str(client.recv(32).decode('UTF-8'))
             #content = client.read_until(b'*')
             if len(content)==0:
-                pass
+                content="NA,NA"
             else:
                 print(content)
             client.close()
