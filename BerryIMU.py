@@ -39,7 +39,7 @@ YP_11 = 0.0
 KFangleX = 0.0
 KFangleY = 0.0
 
-def kalmanFilterY (accAngle, gyroRatem, DT):
+def kalmanFilterY (accAngle, gyroRate, DT):
     y=0.0
     S=0.0
     global KFangleY
@@ -64,7 +64,7 @@ def kalmanFilterY (accAngle, gyroRatem, DT):
     KFangleY=KFangleY+(K_0*y)
     y_bias = y_bias + (K_1*y)
 
-    YP_00 = YP_00 - (K+0*YP_00)
+    YP_00 = YP_00 - (K_0*YP_00)
     YP_01 = YP_01 - (K_0*YP_01)
     YP_10 = YP_10 - (K_1*YP_00)
     YP_11 = YP_11 - (K_1*YP_01)
@@ -79,4 +79,44 @@ def kalmanFilterX ( accAngle,gyroRate,DT):
     global Q_angle
     global Q_gyro
     global x_bias
-    
+    global XP_00
+    global XP_01
+    global XP_10
+    global XP_11
+
+    KFangleX = KFangleX + DT*(gyroRate-x_bias)
+
+    XP_00 = XP_00 + (-DT*(XP_10+XP_01)+Q_angle*DT)
+    XP_01 = XP_01 + (-DT*XP_11)
+    XP_10 = XP_10 + (-DT*XP_11)
+    XP_11 = XP_11 + (Q_gyro*DT)
+
+    x = accAngle - KFangleX
+    S = XP_00 + R_angle
+    K_0 = XP_00/S
+    K_1 = XP_10/S
+
+    KFangleX = KFangleX + (K_0*x)
+    x_bias = x_bias + (K_1*x)
+
+    XP_00 = XP_00 - (K_0*XP_00)
+    XP_01 = XP_01 - (K_0*XP_01)
+    XP_10 = XP_10 - (K_1*XP_00)
+    XP_11 = XP_11 - (K_1*XP_01)
+
+    return KFangleX
+IMU.detectIMU()
+if(IMU.BerryIMUversion==99):
+    print("No BerryIMU found. Quitting")
+    sys.exit()
+IMU.initIMU()
+
+gyroXangle=0.0
+gyroYangle=0.0
+gyroZangle=0.0
+CFangleX = 0.0
+CFangleY = 0.0
+kalmanX = 0.0
+kalmanY=0.0
+a = datetime.datetime.now()
+
