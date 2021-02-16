@@ -1,11 +1,13 @@
 from BerryIMU import *
-
-
+import numpy as np
+gZ=0
+gY=0
 while True:
     try:
         ACCx = IMU.readACCx()
         ACCy = IMU.readACCy()
         ACCz = IMU.readACCz()
+        
 
         GYRx = IMU.readGYRx()
         GYRy = IMU.readGYRy()
@@ -38,6 +40,7 @@ while True:
         #Convert accelerometer vals to degrees:
         AccXangle = (math.atan2(ACCy,ACCz)*RAD_TO_DEG)
         AccYangle = (math.atan2(ACCz,ACCx)+M_PI)*RAD_TO_DEG
+        MagZangle = (math.atan2(MAGy,-MAGx)*RAD_TO_DEG)
 
         #Convert values to -180 and +180:
         if AccYangle > 90:
@@ -52,6 +55,7 @@ while True:
         #Kalman filter used to combine accel and gyro vals:
         kalmanY = kalmanFilterY(AccYangle,rate_gyr_y,LP)
         kalmanX = kalmanFilterX(AccXangle,rate_gyr_x,LP)
+        
 
         #calculate heading:
         heading=180*math.atan2(MAGy,MAGx)/M_PI
@@ -65,16 +69,39 @@ while True:
         #normalize Accel raw values:
         accXnorm = ACCx/math.sqrt(ACCx*ACCx+ACCy*ACCy+ACCz*ACCz)
         accYnorm = ACCy/math.sqrt(ACCx*ACCx+ACCy*ACCy+ACCz*ACCz)
+        accZnorm = ACCz/math.sqrt(ACCx*ACCx+ACCy*ACCy+ACCz*ACCz)
 
         #Calculate pitch and roll:
-        pitch = math.asin(accXnorm)
-        roll = -math.asin(accYnorm/math.cos(pitch))
-
+        #pitch = math.asin(accXnorm)
+        #roll = -math.asin(accYnorm/math.cos(pitch))
+        pitch = kalmanX
+        roll = kalmanY
         magXcomp = MAGx*math.cos(pitch)+MAGz*math.sin(pitch)
         magYcomp = MAGx*math.sin(roll)*math.sin(pitch)+MAGy*math.cos(roll)-MAGz*math.sin(roll)*math.cos(pitch)
+        rawHeading = 180*math.atan2(-MAGy,MAGx)/M_PI
         tiltCompensatedHeading = 180*math.atan2(magYcomp,magXcomp)/M_PI
         if tiltCompensatedHeading<0:
             tiltCompensatedHeading+=360
-        print(tiltCompensatedHeading)
-    except Exception:
+        #print(rawHeading)
+        #print(gyroZangle)
+        #print("X: ",kalmanX)
+
+        #UNFILTERED MODELC YAW
+        #modelcYaw = np.cos(kalmanX)*gyroZangle+np.sin(kalmanX)*gyroYangle
+        
+        #LOW PASS CUTOFF:
+        dY = rate_gyr_y*LP
+        dZ = rate_gyr_z*LP
+        if (np.abs(dY)<0.5):
+            dY=0
+        if (np.abs(dZ)<0.5):
+            dZ=0
+        gZ+=dZ
+        gY+=dY
+        #print(gZ*np.cos(kalmanX/RAD_TO_DEG)+gY*np.sin(kalmanX/RAD_TO_DEG))
+        time.sleep(0.1)
+        #print(kalmanY*np.cos(kalmanX/RAD_TO_DEG))
+        print(GYRx)
+    except Exception as e:
+        print(e)
         continue

@@ -28,6 +28,7 @@ Q_gyro = 0.0015
 R_angle = 0.005
 y_bias = 0.0
 x_bias = 0.0
+z_bias = 0.0
 XP_00 = 0.0
 XP_01 = 0.0
 XP_10 = 0.0
@@ -36,8 +37,13 @@ YP_00 = 0.0
 YP_01 = 0.0
 YP_10 = 0.0
 YP_11 = 0.0
+ZP_00 = 0.0
+ZP_01 = 0.0
+ZP_10 = 0.0
+ZP_11 = 0.0
 KFangleX = 0.0
 KFangleY = 0.0
+KFangleZ = 0.0
 
 def kalmanFilterY (accAngle, gyroRate, DT):
     y=0.0
@@ -105,6 +111,41 @@ def kalmanFilterX ( accAngle,gyroRate,DT):
     XP_11 = XP_11 - (K_1*XP_01)
 
     return KFangleX
+
+def kalmanFilterZ(magAngle,gyroRate,DT):
+    z = 0.0
+    S = 0.0
+    global KFangleZ
+    global Q_angle
+    global Q_gyro
+    global z_bias
+    global ZP_00
+    global ZP_01
+    global ZP_10
+    global ZP_11
+    
+    KFangleZ = KFangleZ + DT*(gyroRate-z_bias)
+    ZP_00 = ZP_00 + (-DT*(ZP_10+ZP_01)+Q_angle*DT)
+    ZP_01 = ZP_01 + (-DT*ZP_11)
+    ZP_10 = ZP_10 + (-DT*ZP_11)
+    ZP_11 = ZP_11 + (Q_gyro*DT)
+
+    z = magAngle - KFangleZ
+    S = XP_00 + R_angle
+    K_0 = ZP_00/S
+    K_1 = ZP_10/S
+
+    KFangleZ = KFangleZ + (K_0*z)
+    z_bias = z_bias + (K_1*z)
+
+    ZP_00 = ZP_00 - (K_0*ZP_00)
+    ZP_01 = ZP_01 - (K_0*ZP_01)
+    ZP_10 = ZP_10 - (K_1*ZP_00)
+    ZP_11 = ZP_11 - (K_1*ZP_01)
+    return KFangleZ
+
+    
+    
 IMU.detectIMU()
 if(IMU.BerryIMUversion==99):
     print("No BerryIMU found. Quitting")
