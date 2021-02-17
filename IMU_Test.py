@@ -72,14 +72,18 @@ while True:
         accZnorm = ACCz/math.sqrt(ACCx*ACCx+ACCy*ACCy+ACCz*ACCz)
 
         #Calculate pitch and roll:
-        #pitch = math.asin(accXnorm)
-        #roll = -math.asin(accYnorm/math.cos(pitch))
-        pitch = kalmanX
-        roll = kalmanY
+        pitch = math.asin(accXnorm)
+        roll = -math.asin(accYnorm/math.cos(pitch))
+        
+        MAGx -= (-2574+257)/2
+        MAGy -= (-585+2213)/2
+        MAGz -= (-1772+1475)/2
+        
         magXcomp = MAGx*math.cos(pitch)+MAGz*math.sin(pitch)
         magYcomp = MAGx*math.sin(roll)*math.sin(pitch)+MAGy*math.cos(roll)-MAGz*math.sin(roll)*math.cos(pitch)
         rawHeading = 180*math.atan2(-MAGy,MAGx)/M_PI
-        tiltCompensatedHeading = 180*math.atan2(magYcomp,magXcomp)/M_PI
+
+        tiltCompensatedHeading = 180*math.atan2(-magYcomp,magXcomp)/M_PI
         if tiltCompensatedHeading<0:
             tiltCompensatedHeading+=360
         #print(rawHeading)
@@ -101,7 +105,7 @@ while True:
         #print(gZ*np.cos(kalmanX/RAD_TO_DEG)+gY*np.sin(kalmanX/RAD_TO_DEG))
         time.sleep(0.1)
         #print(kalmanY*np.cos(kalmanX/RAD_TO_DEG))
-        print(GYRx)
+        print(tiltCompensatedHeading)
     except Exception as e:
         print(e)
         continue
