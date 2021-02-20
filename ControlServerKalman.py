@@ -10,14 +10,8 @@ import csv
 gZ=0
 gY=0
 imuConnection="NA"
-'''
-magXmin = 999999
-magXmax = 999999
-magYmin = 999999
-magYmax = 999999
-magZmin = 999999
-magZmax = 999999
-'''
+C=0
+
 tiltCompensatedHeading = 0
 holdHeading=0
 #servo setup:
@@ -88,7 +82,7 @@ V=0
 cam=100
 n=0
 m=0
-hcGain = 0.5
+hcGain = 1
 
 #COMPASS CALIBRATION LOOP
 while True:
@@ -184,13 +178,12 @@ while True:
             cam=float(data[3])
             l=data[4]
             
-            if(l=='AutoOff') or (abs(i-j)>15) or (l!='AutoOn'):
+            if(abs(i-j)>=15) or (l!='AutoOn'):
                 holdHeading = tiltCompensatedHeading
                 lC = 0
                 rC = 0
             
-            if(l=='AutoOn') and (abs(i-j)<15):
-                
+            if(imuConnection=="connected") and (l=='AutoOn'):
                 ACCx = IMU.readACCx()
                 ACCy = IMU.readACCy()
                 ACCz = IMU.readACCz()
@@ -216,22 +209,25 @@ while True:
                     tiltCompensatedHeading+=360
                 #print(tiltCompensatedHeading)
                 C = tiltCompensatedHeading - holdHeading
+                
+                
+            if(l=='AutoOn') and (abs(i-j)<15):
                 if (C>180):
                     C-=360
                 if(C<-180):
                     C+=360
                 print(C)
-                lC = -hcGain*C
-                rC = hcGain*C
+                lC = hcGain*C
+                rC = -hcGain*C
                 
-                if(lC>20):
-                    lC=20
-                if(lC<-20):
-                    lC=-20
-                if(rC>20):
-                    rC=20
-                if(rC<-20):
-                    rC=-20
+                if(lC>30):
+                    lC=30
+                if(lC<-30):
+                    lC=-30
+                if(rC>30):
+                    rC=30
+                if(rC<-30):
+                    rC=-30
                 m=0
              
         except Exception as e:
@@ -246,11 +242,11 @@ while True:
             R=j+rC
             V=k
             
-            if(abs(L)<1):
+            if(abs(L)<5):
                 L=0
-            if(abs(R)<1):
+            if(abs(R)<5):
                 R=0
-            if(abs(V)<1):
+            if(abs(V)<5):
                 V=0
                 
             angle=1000+cam*1000/180
