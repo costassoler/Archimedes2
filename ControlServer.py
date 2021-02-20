@@ -42,6 +42,7 @@ while True:
             tcpCliSock,addr=tcpSerSock.accept()
             Dat=tcpCliSock.recv(BUFSIZE).decode("utf-8")
             n=0
+            print(Dat)
         
         except:
             #catches any exception (most likely timeout after 0.5 second) that prevents successful command read.'''

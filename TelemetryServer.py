@@ -3,7 +3,7 @@ import numpy as np
 import smbus
 import time
 #import py_qmc58831
-import py_qmc5883l as qmc
+#import py_qmc5883l as qmc
 import math
 import Adafruit_ADS1x15
 adc = Adafruit_ADS1x15.ADS1115()

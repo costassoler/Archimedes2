@@ -6,10 +6,20 @@ import pigpio
 import numpy as np
 import math
 import csv
-#Yaw rate setup:
+#IMU setup:
 gZ=0
 gY=0
-
+imuConnection="NA"
+'''
+magXmin = 999999
+magXmax = 999999
+magYmin = 999999
+magYmax = 999999
+magZmin = 999999
+magZmax = 999999
+'''
+tiltCompensatedHeading = 0
+holdHeading=0
 #servo setup:
 pi=pigpio.pi()
 pi.set_mode(23,pigpio.OUTPUT)
@@ -58,9 +68,11 @@ try:
 except:
     print("No IMU detected")
     imuConnection = "not connected"
+    holdHeading=0
+    tiltCompensatedHeading=0
 HOST=''
 PORT=21567
-BUFSIZE=1024
+BUFSIZE=2048
 ADDR=(HOST,PORT)
 tcpSerSock=socket(AF_INET,SOCK_STREAM)
 tcpSerSock.bind(ADDR)
@@ -75,10 +87,10 @@ R=0
 V=0
 cam=100
 n=0
+m=0
 hcGain = 0.5
-#COMPASS CALIBRATION LOOP
 
-    
+#COMPASS CALIBRATION LOOP
 while True:
     try:     
         try:
@@ -87,7 +99,10 @@ while True:
             Dat=tcpCliSock.recv(BUFSIZE).decode("utf-8")
             data=Dat.split(",")
             l=data[4]
-            print(l)
+            
+            if (l=='AutoOn') or (imuConnection == "not connected"):
+                print("Calibration Complete")
+                break
             MAGx = IMU.readMAGx()
             MAGy = IMU.readMAGy()
             MAGz = IMU.readMAGz()
@@ -128,16 +143,10 @@ while True:
             tiltCompensatedHeading = (180*math.atan2(-magYcomp,magXcomp)/M_PI)-90
             if tiltCompensatedHeading<0:
                 tiltCompensatedHeading+=360
-            holdHeading = tiltCompensatedHeading
 
-            if (l=='AutoOn') or (imuConnection == "not connected"):
-                print("Calibration Complete")
-                break
-            
+            holdHeading = tiltCompensatedHeading
         except Exception as e:
             print(e)
-            #catches any exception (most likely timeout after 0.5 second) that prevents successful command read.'''
-            Dat="0,0,0,"+str(cam)+",AutoOff"
     except KeyboardInterrupt:
         break
 
@@ -152,6 +161,22 @@ while True:
             #reads new commands from socket
             tcpCliSock,addr=tcpSerSock.accept()
             Dat=tcpCliSock.recv(BUFSIZE).decode("utf-8")
+            lC=0
+            rC=0
+            n=0
+            
+        
+        except:
+            #catches any exception (most likely timeout after 0.5 second) that prevents successful command read.'''
+            n+=1
+            if(n>5):
+                Dat="0,0,0,"+str(cam)+",AutoOff"
+            lC=0
+            rC=0
+        '''END Disconnect Safety Override'''     
+        
+        
+        try:
             data=Dat.split(",")
             i=float(data[0])
             j=float(data[1])
@@ -159,20 +184,13 @@ while True:
             cam=float(data[3])
             l=data[4]
             
-        except:
-            #catches any exception (most likely timeout after 0.5 second) that prevents successful command read.'''
-            i=0
-            j=0
-            k=0
-            cam=cam
-            l="AutoOff"
+            if(l=='AutoOff') or (abs(i-j)>15) or (l!='AutoOn'):
+                holdHeading = tiltCompensatedHeading
+                lC = 0
+                rC = 0
             
-            lC = 0
-            rC = 0
-            
-        '''END Disconnect Safety Override'''
-        try:    
-            if(l=='AutoOn'):
+            if(l=='AutoOn') and (abs(i-j)<15):
+                
                 ACCx = IMU.readACCx()
                 ACCy = IMU.readACCy()
                 ACCz = IMU.readACCz()
@@ -184,8 +202,8 @@ while True:
                 MAGy -= (magYmin+magYmax)/2
                 MAGz -= (magZmin+magZmax)/2
 
-                accXnorm = ACCx/math.sqrt(ACCx*ACCx+ACCy*ACCy+ACCz*ACCz)
-                accYnorm = ACCy/math.sqrt(ACCx*ACCx+ACCy*ACCy+ACCz*ACCz)
+                accXnorm = ACCx/((ACCx*ACCx+ACCy*ACCy+ACCz*ACCz)**0.5)
+                accYnorm = ACCy/((ACCx*ACCx+ACCy*ACCy+ACCz*ACCz)**0.5)
 
                 pitch = math.asin(accXnorm)
                 roll = -math.asin(accYnorm/math.cos(pitch))
@@ -196,15 +214,15 @@ while True:
                 tiltCompensatedHeading = (180*math.atan2(-magYcomp,magXcomp)/M_PI)-90
                 if tiltCompensatedHeading<0:
                     tiltCompensatedHeading+=360
-                    
-                if(holdHeading<90) and (tiltCompensatedHeading>270):
-                    tiltCompensatedHeading-=360
-                if(holdHeading>270) and (tiltCompensatedHeading<90):
-                    tiltCompensatedHeading+=360
-                    
+                #print(tiltCompensatedHeading)
                 C = tiltCompensatedHeading - holdHeading
-                lC = hcGain*C
-                rC = -hcGain*C
+                if (C>180):
+                    C-=360
+                if(C<-180):
+                    C+=360
+                print(C)
+                lC = -hcGain*C
+                rC = hcGain*C
                 
                 if(lC>20):
                     lC=20
@@ -214,13 +232,13 @@ while True:
                     rC=20
                 if(rC<-20):
                     rC=-20
-                
-            if(l=='AutoOff') or (abs(i-j)>15):
-                holdHeading = tiltCompensatedHeading
-                lC = 0
-                rC = 0
-                    
+                m=0
+             
         except Exception as e:
+            m+=1
+            if (m>=5):
+                lC=0
+                rC=0
             print(e)
         
         try:
@@ -228,11 +246,11 @@ while True:
             R=j+rC
             V=k
             
-            if(abs(L)<5):
+            if(abs(L)<1):
                 L=0
-            if(abs(R)<5):
+            if(abs(R)<1):
                 R=0
-            if(abs(V)<5):
+            if(abs(V)<1):
                 V=0
                 
             angle=1000+cam*1000/180
@@ -246,8 +264,8 @@ while True:
             c.R(R*scale)
             c.LV(V*scale)
             c.RV(V*scale)
-            print(L,R,V,l)
-                
+            #time.sleep(0.1)
+            #print(tiltCompensatedHeading)
         except Exception as e:
             print(e)
             continue
