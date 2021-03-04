@@ -4,6 +4,8 @@ gZ=0
 gY=0
 while True:
     try:
+        #with open('calibrationdata.csv', newline='') as csvfile:
+            #data = np.array(list(csv.reader(csvfile)))
         ACCx = IMU.readACCx()
         ACCy = IMU.readACCy()
         ACCz = IMU.readACCz()
@@ -106,6 +108,10 @@ while True:
         time.sleep(0.1)
         #print(kalmanY*np.cos(kalmanX/RAD_TO_DEG))
         print(tiltCompensatedHeading)
+        
+
+        calibration_array =  np.array([magXmin,magXmax,magYmin,magYmax,magZmin,magZmax])
+        calibration_array.tofile('calibrationdata.csv',sep=',')
     except Exception as e:
         print(e)
         continue

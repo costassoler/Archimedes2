@@ -44,17 +44,17 @@ def R(x):
 
 def LV(y):
     if(y>=0):
-        GPIO.output(DirL,GPIO.HIGH)
+        GPIO.output(DirLV,GPIO.HIGH)
         l.start(abs(y))
     if(y<0):
-        GPIO.output(DirL,GPIO.LOW)
+        GPIO.output(DirLV,GPIO.LOW)
         l.start(abs(y))
 def L(z):
     if(z<=0):
-        GPIO.output(DirLV,GPIO.HIGH)
+        GPIO.output(DirL,GPIO.HIGH)
         lv.start(abs(z))
     if(z>0):
-        GPIO.output(DirLV,GPIO.LOW)
+        GPIO.output(DirL,GPIO.LOW)
         lv.start(abs(z))
         
         

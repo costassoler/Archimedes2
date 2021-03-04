@@ -1,3 +1,4 @@
+#!/usr/bin/env/python3
 from socket import *
 from time import ctime
 import os
@@ -19,8 +20,12 @@ pi=pigpio.pi()
 pi.set_mode(23,pigpio.OUTPUT)
 pi.set_servo_pulsewidth(23,1500)
 print("servo setup")
-
-
+magXmin=999999
+magYmin=999999
+magZmin=999999
+magXmax=999999
+magYmax=999999
+magZmax=999999
 try:
     from BerryIMU import *
     a = datetime.datetime.now()
@@ -75,7 +80,7 @@ print('Waiting for connection')
 tcpCliSock,addr=tcpSerSock.accept()
 print('...connected from:',ADDR)
 tcpSerSock.settimeout(0.5) #Socket reader moves on after waiting for a new message for 1 second
-scale = .7
+scale = .9
 L=0
 R=0
 V=0
@@ -177,13 +182,14 @@ while True:
             k=float(data[2])
             cam=float(data[3])
             l=data[4]
+        except Exception as e:
+            m+=1
+            if (m>=5):
+                C=0
+            print(e)
             
-            if(abs(i-j)>=15) or (l!='AutoOn'):
-                holdHeading = tiltCompensatedHeading
-                lC = 0
-                rC = 0
-            
-            if(imuConnection=="connected") and (l=='AutoOn'):
+        try:
+            if(imuConnection=="connected") and (abs(i-j)<15):
                 ACCx = IMU.readACCx()
                 ACCy = IMU.readACCy()
                 ACCz = IMU.readACCz()
@@ -210,36 +216,32 @@ while True:
                 #print(tiltCompensatedHeading)
                 C = tiltCompensatedHeading - holdHeading
                 
-                
             if(l=='AutoOn') and (abs(i-j)<15):
                 if (C>180):
                     C-=360
                 if(C<-180):
                     C+=360
-                print(C)
-                lC = hcGain*C
-                rC = -hcGain*C
                 
-                if(lC>30):
-                    lC=30
-                if(lC<-30):
-                    lC=-30
-                if(rC>30):
-                    rC=30
-                if(rC<-30):
-                    rC=-30
+                if(C>30):
+                    C=30
+                if(C<-30):
+                    C=-30
+                m=0    
+            if(abs(i-j)>=15) or (l=='AutoOff'):
+                holdHeading = tiltCompensatedHeading
+                C=0
                 m=0
-             
         except Exception as e:
             m+=1
             if (m>=5):
-                lC=0
-                rC=0
+                C=0
             print(e)
         
         try:
-            L=i+lC
-            R=j+rC
+            if (abs(i-j)>=15) or (l!='AutoOn'):
+                C=0
+            L=i+hcGain*C
+            R=j-hcGain*C
             V=k
             
             if(abs(L)<5):
@@ -262,6 +264,7 @@ while True:
             c.RV(V*scale)
             #time.sleep(0.1)
             #print(tiltCompensatedHeading)
+            print(L,R,V)
         except Exception as e:
             print(e)
             continue
