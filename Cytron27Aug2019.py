@@ -56,5 +56,3 @@ def L(z):
     if(z>0):
         GPIO.output(DirL,GPIO.LOW)
         l.start(abs(z))
-        
-        
